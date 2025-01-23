@@ -10,11 +10,16 @@
   "content_scripts": [
     {
       "matches": ["*://*.instagram.com/*", "*://*.facebook.com/*", "*://*.x.com/*"],
-      "js": ["content.js"]
+      "js": ["lib/html2canvas.min.js","content.js"]
     }
   ],
   "action": {
     "default_popup": "popup.html"
-  }
+  }, "web_accessible_resources": [
+    {
+      "resources": ["lib/html2canvas.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
 

@@ -1,31 +1,31 @@
-// background.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    const imageUrl = request.imageUrl;
-    classifyImage(imageUrl).then(isScam => {
-        if (isScam) {
-            alertUser(imageUrl);
-        }
-    }).catch(error => {
-        console.error('Error classifying image:', error);
-    });
+    if (request.action === 'classifyImage') {
+        classifyImageWithOpenAI(request.imageData).then(isScam => {
+            sendResponse({ isScam });
+        }).catch(error => {
+            console.error('Error classifying image:', error);
+            sendResponse({ isScam: false });
+        });
+        return true; // Indicates that the response will be sent asynchronously
+    }
 });
 
-async function classifyImage(imageUrl) {
-    try {
-        const response = await fetch('http://127.0.0.1:5000/', {
-            method: 'POST',
-            body: JSON.stringify({ imageUrl }),
-            headers: { 'Content-Type': 'application/json' }
-        });
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        return data.isScam; // Assuming the API returns an object with isScam property
-    } catch (error) {
-        console.error('Error fetching classification:', error);
-        throw error;
-    }
+async function classifyImageWithOpenAI(imageData) {
+    // const apiKey = 'YOUR_OPENAI_API_KEY'; // Replace with your OpenAI API key
+    // const openai = new OpenAI(apiKey);
+
+    // try {
+    //     const response = await openai.createImageClassification({
+    //         model: "image-classification-001",
+    //         image: imageData,
+    //         labels: ["scam", "not_scam"]
+    //     });
+    //     return response.data.label === "scam";
+    // } catch (error) {
+    //     console.error('Error classifying image with OpenAI:', error);
+    //     return false;
+    // }
+    return true;
 }
 
 function alertUser(imageUrl) {

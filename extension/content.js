@@ -1,4 +1,5 @@
 // content.js
+
 const hostname = window.location.hostname;
 
 if (hostname.includes('instagram.com')) {
@@ -8,89 +9,77 @@ if (hostname.includes('instagram.com')) {
 } else if (hostname.includes('x.com')) {
     handleX();
 }
+function insertCSPMetaTag() {
+    const meta = document.createElement('meta');
+    meta.httpEquiv = "Content-Security-Policy";
+    meta.content = "default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:";
+  
+    const head = document.getElementsByTagName('head')[0];
+    head.appendChild(meta);
+  }
+  
+  
 
 function handleInstagram() {
     console.log('Handling Instagram-specific');
-    results = new Set();
+    const results = [];
+    const processedArticles = new Set();
 
-    function processArticles(articles) {
-        articles.forEach((article, index) => {
-            
-            if (results.has(article)) return; // Skip already processed articles
-            console.log("Processing article:", article);
-            try {
-                // XPath to locate the image inside the article
-                const xpath = "./div[2]/div[2]/div[1]/div/div/div[1]/div/div/div/div/div/div/div/div/div/div[1]/img";
-                const imgElement = document.evaluate(
-                    xpath,
-                    article,
-                    null,
-                    XPathResult.FIRST_ORDERED_NODE_TYPE,
-                    null
-                ).singleNodeValue;
-                console.log("Processing image:", imgElement);
-                if (imgElement) {
-                    // Extract the thumbnail URL
-                    const thumbnailUrl = imgElement.getAttribute("src");
-                    console.log(`Thumbnail URL for post:`, thumbnailUrl);
-
-                    // Add the thumbnail to the results
-                    results.add({
-                        postIndex: index + 1, // Add post index (optional)
-                        thumbnailUrl: thumbnailUrl,
-                    });
-                }
-            } catch (err) {
-                console.error(`Error processing article ${index + 1}:`, err);
-            }
-        });
+    function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
-document.addEventListener("scroll",()=>{
-    const initialArticles = document.querySelectorAll("article");
-        processArticles(initialArticles);
 
-})
-    document.addEventListener("DOMContentLoaded", () => {
-        // Set to store processed results
-        
-    
-        // Function to process article elements
-       
-    
-        // MutationObserver to detect new posts
-        //const observer = new MutationObserver((mutations) => {
-        //     mutations.forEach((mutation) => {
-        //         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-        //             const newArticles = Array.from(mutation.addedNodes).filter((node) => 
-        //                 node.tagName === "ARTICLE" // Filter new articles
-        //             );
-        //             processArticles(newArticles); // Process newly added posts
-        //         }
-        //     });
-        // });
-    
-        // // Observe the main feed container for changes
-        // const targetNode = document.querySelector("main"); // Adjust based on Instagram's structure
-        // if (targetNode) {
-        //     observer.observe(targetNode, {
-        //         childList: true, // Watch for added/removed child nodes
-        //         subtree: true,   // Watch all descendants
-        //     });
-        //     console.log("MutationObserver is observing the main feed...");
-        // } else {
-        //     console.error("Target container for posts not found.");
-        // }
-    
-        // Process any initial articles already loaded
-        const initialArticles = document.querySelectorAll("article");
-        processArticles(initialArticles);
-    
-        // Example: Send results to the background script
-        console.log("Extracted Results:", Array.from(results));
-       // chrome.runtime.sendMessage({ type: "POST_THUMBNAILS", data: Array.from(results) });
+    async function scrap(articles) {
+        for (const article of articles) {
+            if (processedArticles.has(article)) {
+                continue; // Skip already processed articles
+            }
+            processedArticles.add(article);
+
+            const post = {};
+            console.log("Working on", article);
+            await html2canvas(article, { useCORS: true, willReadFrequently: true }).then((canvas) => {
+                post.screenshot = canvas.toDataURL("image/png");
+                results.push(post);
+                chrome.runtime.sendMessage({ action: 'classifyImage', imageData: post.screenshot }, (response) => {
+                    if (response.isScam) {
+                        console.log("SCam");
+                        // Modify the article div to alert the user about the scam
+                        article.style.border = '2px solid red';
+                        const warning = document.createElement('div');
+                        warning.style.color = 'red';
+                        warning.style.fontWeight = 'bold';
+                        warning.textContent = 'Warning: This post is classified as a scam!';
+                        article.prepend(warning);
+                    }
+                   
+                });
+            });
+            await delay(500); // Delay of 500ms after processing each article
+        }
+
+        // Log the results after capturing all screenshots
+        console.log(results);
+    }
+
+    async function onDOMContentLoaded() {
+        console.log("DOM Content Loaded");
+        await delay(1000); // Delay of 1000ms after DOM content is loaded
+        const articles = document.querySelectorAll("article");
+        await scrap(articles);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener("DOMContentLoaded", onDOMContentLoaded);
+    } else {
+        onDOMContentLoaded();
+    }
+
+    document.addEventListener("scroll", async () => {
+        console.log("Scrolled");
+        const articles = document.querySelectorAll("article");
+        await scrap(articles);
     });
-    
-    // Add Instagram specific logic here
 }
 
 function handleFacebook() {
