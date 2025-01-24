@@ -1,41 +1,58 @@
-# from flask import Flask, request, jsonify
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import base64
+import openai
+import os
+import uvicorn
+from dotenv import load_dotenv
+load_dotenv()
+app = FastAPI()
 
-# app = Flask(__name__)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["chrome-extension://nninmhcncmmlplpnfklkdeohhmfggcpd"],  # Replace with your Chrome extension ID
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# # I need a / route which accepts an image url in post and return true
-# @app.route('/', methods=['POST'])
-# def index():
-#     # get the image url from the post request
-#     data = request.get_json()
-#     image_url = data.get('imageUrl')
-#     print(image_url)
-    
-#     # Dummy logic to determine if the image is a scam
-#     is_scam = True  # Replace with actual logic
-    
-#     return jsonify({'isScam': is_scam})
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# if __name__ == '__main__':
-#     app.run(debug=True)
+class ImageRequest(BaseModel):
+    image_base64: str
+class Output(BaseModel):
+    scam: bool
 
-from transformers import AutoProcessor, AutoModelForCausalLM
-from huggingface_hub import hf_hub_download
-from PIL import Image
 
-processor = AutoProcessor.from_pretrained("microsoft/git-base-textvqa")
-model = AutoModelForCausalLM.from_pretrained("microsoft/git-base-textvqa")
+@app.post("/classify-image")
+async def classify_image(request: ImageRequest):
+    prompt = "Classify whether the post is scam or not.Consider only financial scams."
+    response = openai.beta.chat.completions.parse(
+    model="gpt-4o-mini",
+    response_format=Output,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": request.image_base64},
+                },
+            ],
+        }
+    ],)
+    return response.choices[0].message.parsed.scam
+   
 
-file_path = hf_hub_download(repo_id="nielsr/textvqa-sample", filename="bus.png", repo_type="dataset")
-image = Image.open(file_path).convert("RGB")
 
-pixel_values = processor(images=image, return_tensors="pt").pixel_values
+@app.post("/test")
+async def classify_image(request: ImageRequest):
+ 
+    return True
+   
 
-question = "what does the front of the bus say at the top?"
-
-input_ids = processor(text=question, add_special_tokens=False).input_ids
-input_ids = [processor.tokenizer.cls_token_id] + input_ids
-input_ids = torch.tensor(input_ids).unsqueeze(0)
-
-generated_ids = model.generate(pixel_values=pixel_values, input_ids=input_ids, max_length=50)
-print(processor.batch_decode(generated_ids, skip_special_tokens=True))
-['what does the front of the bus say at the top? special']
+# if __name__ == "__main__":
+   
+#     uvicorn.run(app, host="0.0.0.0", port=8000)

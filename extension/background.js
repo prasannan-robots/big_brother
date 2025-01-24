@@ -1,5 +1,11 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'classifyImage') {
+    if (request.action === 'toggleMonitoring') {
+        monitoring = !monitoring;
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'setMonitoring', monitoring });
+        });
+        sendResponse({ monitoring });
+    } else if (request.action === 'classifyImage') {
         classifyImageWithOpenAI(request.imageData).then(isScam => {
             sendResponse({ isScam });
         }).catch(error => {
@@ -11,20 +17,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function classifyImageWithOpenAI(imageData) {
-    // const apiKey = 'YOUR_OPENAI_API_KEY'; // Replace with your OpenAI API key
-    // const openai = new OpenAI(apiKey);
+    
+const response = await fetch('http://127.0.0.1:8000/test', { // Replace with your server URL
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ image_base64: imageData })
+});
 
-    // try {
-    //     const response = await openai.createImageClassification({
-    //         model: "image-classification-001",
-    //         image: imageData,
-    //         labels: ["scam", "not_scam"]
-    //     });
-    //     return response.data.label === "scam";
-    // } catch (error) {
-    //     console.error('Error classifying image with OpenAI:', error);
-    //     return false;
-    // }
+const result = await response.json();
+console.log(result);
     return true;
 }
 

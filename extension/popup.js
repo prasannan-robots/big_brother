@@ -1,7 +1,5 @@
-// popup.js
-
 document.getElementById('toggle').addEventListener('click', () => {
-    // Send a message to the content script to toggle monitoring
+    // Send a message to the background script to toggle monitoring
     chrome.runtime.sendMessage({ action: 'toggleMonitoring' }, (response) => {
         const statusElement = document.getElementById('status');
         console.log(response);
@@ -12,7 +10,7 @@ document.getElementById('toggle').addEventListener('click', () => {
                 statusElement.textContent = 'Monitoring is OFF';
             }
         } else {
-            statusElement.textContent = 'Error: No response from content script';
+            statusElement.textContent = 'Error: No response from background script';
         }
     });
 });
