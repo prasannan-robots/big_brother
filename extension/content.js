@@ -26,9 +26,12 @@ function stopScanning() {
 }
 
 if (hostname.includes('instagram.com')) {
-    if (monitoring) {
-        startScanning();
-    }
+    chrome.storage.local.get('monitoring', (data) => {
+        monitoring = data.monitoring || false;
+        if (monitoring) {
+            startScanning();
+        }
+    });
 } else if (hostname.includes('facebook.com')) {
     handleFacebook();
 } else if (hostname.includes('x.com')) {
@@ -66,7 +69,7 @@ function handleInstagram() {
 
             const post = {};
             console.log("Working on", article);
-            await html2canvas(article, { useCORS: true, willReadFrequently: true }).then((canvas) => {
+            html2canvas(article, { useCORS: true, willReadFrequently: true }).then((canvas) => {
                 post.screenshot = canvas.toDataURL("image/png");
                 results.push(post);
                 chrome.runtime.sendMessage({ action: 'classifyImage', imageData: post.screenshot }, (response) => {
@@ -88,8 +91,7 @@ function handleInstagram() {
                         article.prepend(warning);
                     }
                 });
-            });
-            await delay(500); // Delay of 500ms after processing each article
+            });// Delay of 200ms after processing each article
         }
 
         // Log the results after capturing all screenshots
@@ -98,7 +100,7 @@ function handleInstagram() {
 
     async function onDOMContentLoaded() {
         console.log("DOM Content Loaded");
-        await delay(1000); // Delay of 1000ms after DOM content is loaded
+        await delay(200); // Delay of 200ms after DOM content is loaded
         const articles = document.querySelectorAll("article");
         await scrap(articles);
     }
@@ -111,8 +113,7 @@ function handleInstagram() {
 
     document.addEventListener("scroll", async () => {
         console.log("Scrolled");
-        const articles = document.querySelectorAll("article");
-        await scrap(articles);
+        scrap(document.querySelectorAll("article"));
     });
 }
 
