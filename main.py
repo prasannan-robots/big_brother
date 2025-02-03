@@ -54,6 +54,7 @@ async def classify_image(request: ImageRequest):
             }
         ],
     )
+    print(response.choices[0].message.parsed.scam)
     if response.choices[0].message.parsed.scam:
         cursor.execute(
             "INSERT INTO scamdata VALUES (?, ?, ?)",

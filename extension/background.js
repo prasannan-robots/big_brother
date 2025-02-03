@@ -30,7 +30,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function classifyImageWithOpenAI(imageData) {
-    const response = await fetch('http://127.0.0.1:8000/test', { // Replace with your server URL
+    const response = await fetch('http://127.0.0.1:8000/classify-image', { // Replace with your server URL
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
