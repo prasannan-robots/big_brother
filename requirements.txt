@@ -71,7 +71,7 @@ httpx==0.28.1
 idna==3.10
 image-geometry==3.2.1
 interactive-markers==2.3.2
-Jinja2==3.1.5
+Jinja2==3.1.6
 jiter==0.8.2
 joint-state-publisher==2.4.0
 joint-state-publisher-gui==2.4.0
