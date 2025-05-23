@@ -214,7 +214,7 @@ toml==0.10.2
 topic-monitor==0.20.5
 topic-tools==1.1.1
 topic-tools-interfaces==1.1.1
-tornado==6.4.2
+tornado==6.5.1
 tqdm==4.67.1
 trajectory-msgs==4.2.4
 turtlesim==1.4.2
