@@ -18,51 +18,44 @@ This project is a real-time scam detector that uses a large language model (LLM)
     cd big_brother
     ```
 
-2. **Set up the FastAPI server:**
+2. **Set up the API server:**
 
-    - Create a virtual environment and activate it:
+    ```sh
+    python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
+    pip install -r requirements.txt
+    ```
 
-        ```sh
-        python -m venv venv
-        source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-        ```
+    Create a `.env` file (never commit it):
 
-    - Install the required dependencies:
+    ```env
+    OPENAI_API_KEY=your_openai_api_key
+    # Optional but recommended if the server isn't only on localhost:
+    SCAM_API_TOKEN=a-long-random-string
+    # Optional: protect the review dashboard
+    DASHBOARD_PASSWORD=another-secret
+    ```
 
-        ```sh
-        pip install -r requirements.txt
-        ```
+    Start it:
 
-    - Create a `.env` file in the project root and add your OpenAI API key:
+    ```sh
+    uvicorn main:app --host 127.0.0.1 --port 8000
+    ```
 
-        ```env
-        OPENAI_API_KEY=your_openai_api_key
-        ```
+3. **Load the extension:** open `chrome://extensions`, enable *Developer mode*, click
+   *Load unpacked* and pick the `extension/` folder.
 
-    - Run the FastAPI server:
+4. **Use it:** open the extension popup and switch monitoring on. Posts are screenshotted as
+   they scroll into view and sent to your server; scams get a red warning with the reason,
+   and the extension badge counts them. Under *Server settings* you can point the extension
+   at another server and enter the API token.
 
-        ```sh
-        uvicorn main:app --reload
-        ```
-3. **Run the Streamlit web app:**
+5. **Review flagged posts:** `streamlit run streamlit_app.py`
 
-    - Navigate back to the project root:
+## Prerequisites
 
-        ```sh
-        cd ..
-        ```
-
-    - Run the Streamlit app:
-
-        ```sh
-        streamlit run streamlit_app.py
-        ``
-
-### Prerequisites
-
-- Python 3.7+
-- Browser
-- Api Key
+- Python 3.10+
+- Chrome or another Chromium browser
+- An OpenAI API key
 
 ## Usage
 

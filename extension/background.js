@@ -1,58 +1,42 @@
-let monitoring = false;
+// Scam Detector background worker: forwards screenshots to the API server.
 
-// Load the monitoring state from storage
-chrome.storage.local.get('monitoring', (data) => {
-    monitoring = data.monitoring || false;
-});
+const DEFAULTS = { serverUrl: "http://127.0.0.1:8000", apiToken: "" };
+const scamsPerTab = new Map();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'toggleMonitoring') {
-        monitoring = !monitoring;
-        // Store the monitoring state
-        chrome.storage.local.set({ monitoring });
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.tabs.sendMessage(tabs[0].id, { action: 'setMonitoring', monitoring }, () => {
-                if (chrome.runtime.lastError) {
-                    console.error(chrome.runtime.lastError);
-                }
-            });
-        });
-        sendResponse({ monitoring });
-    } else if (request.action === 'classifyImage') {
-        classifyImageWithOpenAI(request.imageData).then(isScam => {
-        console.log(isScam);    sendResponse({ isScam });
-        }).catch(error => {
-            console.error('Error classifying image:', error);
-            sendResponse({ isScam: false });
-        });
-        return true; // Indicates that the response will be sent asynchronously
-    }
+  if (request.action === "classifyImage") {
+    classify(request.imageData)
+      .then((verdict) => {
+        if (verdict.scam && sender.tab) countScam(sender.tab.id);
+        sendResponse(verdict);
+      })
+      .catch((error) => {
+        console.warn("Scam Detector: classification failed:", error);
+        sendResponse({ scam: false, error: String(error) });
+      });
+    return true; // respond asynchronously
+  }
+  return false;
 });
 
-async function classifyImageWithOpenAI(imageData) {
-    const response = await fetch('http://127.0.0.1:8000/classify-image', { // Replace with your server URL
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ image_base64: imageData })
-    });
-
-    const result = await response.json();
-    console.log(result);
-    return result;
+async function classify(imageData) {
+  const { serverUrl, apiToken } = await chrome.storage.local.get(DEFAULTS);
+  const headers = { "Content-Type": "application/json" };
+  if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
+  const response = await fetch(`${serverUrl.replace(/\/+$/, "")}/classify-image`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ image_base64: imageData }),
+  });
+  if (!response.ok) throw new Error(`Server returned HTTP ${response.status}`);
+  return response.json();
 }
 
-function alertUser(imageUrl) {
-    chrome.notifications.create({
-        type: 'basic',
-        iconUrl: 'icon.png', // Ensure you have an icon.png in your extension directory
-        title: 'Potential Scam Detected',
-        message: `A scam image was detected: ${imageUrl}`,
-        priority: 2
-    }, (notificationId) => {
-        if (chrome.runtime.lastError) {
-            console.error('Notification error:', chrome.runtime.lastError);
-        }
-    });
+function countScam(tabId) {
+  const count = (scamsPerTab.get(tabId) || 0) + 1;
+  scamsPerTab.set(tabId, count);
+  chrome.action.setBadgeBackgroundColor({ color: "#d93025", tabId });
+  chrome.action.setBadgeText({ text: String(count), tabId });
 }
+
+chrome.tabs.onRemoved.addListener((tabId) => scamsPerTab.delete(tabId));

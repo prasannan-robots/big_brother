@@ -1,34 +1,45 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleSwitch = document.getElementById('toggle');
-    const statusElement = document.getElementById('status');
+const DEFAULTS = { monitoring: false, serverUrl: "http://127.0.0.1:8000", apiToken: "" };
+const $ = (id) => document.getElementById(id);
 
-    // Load the monitoring state from storage
-    chrome.storage.local.get('monitoring', (data) => {
-        const monitoring = data.monitoring || false;
-        toggleSwitch.checked = monitoring;
-        updateStatus(monitoring);
-    });
+function showStatus(on) {
+  $("status").innerHTML = "";
+  const strong = document.createElement("strong");
+  strong.textContent = on ? "Monitoring is ON" : "Monitoring is OFF";
+  $("status").append(strong);
+}
 
-    toggleSwitch.addEventListener('change', () => {
-        const monitoring = toggleSwitch.checked;
-        // Store the monitoring state
-        chrome.storage.local.set({ monitoring });
-        // Send a message to the background script to toggle monitoring
-        chrome.runtime.sendMessage({ action: 'toggleMonitoring' }, (response) => {
-            console.log(response);
-            if (response && response.monitoring !== undefined) {
-                updateStatus(response.monitoring);
-            } else {
-                statusElement.textContent = 'Error: No response from background script';
-            }
-        });
-    });
+chrome.storage.local.get(DEFAULTS, (data) => {
+  $("toggle").checked = data.monitoring;
+  $("serverUrl").value = data.serverUrl;
+  $("apiToken").value = data.apiToken;
+  showStatus(data.monitoring);
+});
 
-    function updateStatus(monitoring) {
-        if (monitoring) {
-            statusElement.textContent = 'Monitoring is ON';
-        } else {
-            statusElement.textContent = 'Monitoring is OFF';
-        }
+// Content scripts listen to chrome.storage, so storing the value is enough.
+$("toggle").addEventListener("change", () => {
+  const monitoring = $("toggle").checked;
+  chrome.storage.local.set({ monitoring });
+  showStatus(monitoring);
+});
+
+$("save").addEventListener("click", async () => {
+  const serverUrl = $("serverUrl").value.trim().replace(/\/+$/, "") || DEFAULTS.serverUrl;
+  const apiToken = $("apiToken").value.trim();
+  const message = $("message");
+  try {
+    const url = new URL(serverUrl);
+    const local = ["127.0.0.1", "localhost"].includes(url.hostname);
+    if (!local) {
+      const granted = await chrome.permissions.request({ origins: [`${url.origin}/*`] });
+      if (!granted) { message.textContent = "Permission to reach that server was denied."; return; }
     }
+    await chrome.storage.local.set({ serverUrl, apiToken });
+    const response = await fetch(`${serverUrl}/health`);
+    const health = await response.json();
+    message.textContent = health.ok
+      ? `Connected.${health.auth_required && !apiToken ? " The server needs an API token." : ""}`
+      : "The server responded unexpectedly.";
+  } catch (error) {
+    message.textContent = `Couldn't reach the server: ${error.message}`;
+  }
 });
