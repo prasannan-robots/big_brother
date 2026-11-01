@@ -1,25 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Scam Detector",
-  "version": "1.0",
-  "description": "Detects scam images in posts and alerts users.",
-  "permissions": ["activeTab", "storage", "notifications"],
+  "version": "1.1",
+  "description": "Flags financial scam posts on Instagram, Facebook and X.",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1:8000/*", "http://localhost:8000/*"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["*://*.instagram.com/*", "*://*.facebook.com/*", "*://*.x.com/*"],
-      "js": ["lib/html2canvas.min.js","content.js"]
+      "matches": ["*://*.instagram.com/*", "*://*.facebook.com/*", "*://*.x.com/*", "*://*.twitter.com/*"],
+      "js": ["lib/html2canvas.min.js", "content.js"]
     }
   ],
   "action": {
     "default_popup": "popup.html"
-  }, "web_accessible_resources": [
-    {
-      "resources": ["lib/html2canvas.min.js"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }
-

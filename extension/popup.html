@@ -1,77 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scam Image Detector</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            width: 200px;
-            padding: 10px;
-            background-color: #f9f9f9;
-        }
-        h1 {
-            font-size: 18px;
-            margin: 0;
-            padding-bottom: 10px;
-            color: #333;
-        }
-        #status {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 34px;
-            height: 20px;
-        }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 20px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 14px;
-            width: 14px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: #2196F3;
-        }
-        input:checked + .slider:before {
-            transform: translateX(14px);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Scam Detector</title>
+  <style>
+    body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Arial, sans-serif; width: 280px; margin: 0; padding: 14px; color: #1f2328; background: #fff; }
+    h1 { font-size: 16px; margin: 0 0 2px; }
+    .muted { color: #656d76; font-size: 12px; }
+    .row { display: flex; align-items: center; justify-content: space-between; margin: 14px 0; padding: 10px 12px; background: #f6f8fa; border-radius: 10px; }
+    .switch { position: relative; width: 40px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; cursor: pointer; background: #c4c9cf; border-radius: 22px; transition: .2s; }
+    .slider:before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+    input:checked + .slider { background: #2da44e; }
+    input:checked + .slider:before { transform: translateX(18px); }
+    details summary { cursor: pointer; color: #0969da; }
+    label { display: block; font-size: 12px; margin-top: 8px; }
+    input[type=text], input[type=password] { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #d0d7de; border-radius: 6px; }
+    button { margin-top: 10px; padding: 6px 12px; border: 1px solid #d0d7de; border-radius: 6px; background: #f6f8fa; cursor: pointer; }
+    #message { margin-top: 8px; font-size: 12px; }
+  </style>
 </head>
 <body>
-    <h1>Scam Image Detector</h1>
-    <label class="switch">
-        <input type="checkbox" id="toggle">
-        <span class="slider"></span>
-    </label>
-    <p id="status">Monitoring images...</p>
+  <h1>🛡️ Scam Detector</h1>
+  <div class="muted">Flags financial scams on Instagram, Facebook and X.</div>
 
-    <script src="popup.js"></script>
+  <div class="row">
+    <div>
+      <div id="status"><strong>Monitoring is OFF</strong></div>
+      <div class="muted">Posts are checked as you scroll.</div>
+    </div>
+    <label class="switch" title="Toggle monitoring">
+      <input type="checkbox" id="toggle"><span class="slider"></span>
+    </label>
+  </div>
+
+  <details>
+    <summary>Server settings</summary>
+    <label for="serverUrl">Server URL</label>
+    <input type="text" id="serverUrl" placeholder="http://127.0.0.1:8000">
+    <label for="apiToken">API token (if the server uses SCAM_API_TOKEN)</label>
+    <input type="password" id="apiToken" autocomplete="off">
+    <button id="save">Save &amp; test connection</button>
+    <div id="message" class="muted"></div>
+  </details>
+
+  <script src="popup.js"></script>
 </body>
 </html>
-
